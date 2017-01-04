@@ -32,7 +32,7 @@ class TypeTray(Boxes):
             "--gripwidth", action="store", type=float, default=70,
             dest="gw", help="width of th grip hole in mm (zero for no hole)")
 
-    def xSlots(self, front=False):
+    def xSlots(self, front=False): # test
         posx = -0.5 * self.thickness
         for x in self.sx[:-1]:
             posx += x + self.thickness
@@ -62,7 +62,7 @@ class TypeTray(Boxes):
             posx += self.thickness + x / 2
 
     def xSlotsFront(self):
-        self.xSlots(True)
+        self.xSlots(True) # test
 
     def ySlots(self):
         posy = -0.5 * self.thickness
