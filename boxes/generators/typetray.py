@@ -32,14 +32,37 @@ class TypeTray(Boxes):
             "--gripwidth", action="store", type=float, default=70,
             dest="gw", help="width of th grip hole in mm (zero for no hole)")
 
-    def xSlots(self):
+    def xSlots(self, front=False):
         posx = -0.5 * self.thickness
         for x in self.sx[:-1]:
             posx += x + self.thickness
             posy = 0
+#             prevY = None
             for y in self.sy:
                 self.fingerHolesAt(posx, posy, y)
+#                 if front and prevY is not None:
+#                     self.fingerHolesAt(posx, (posy + prevY) / 2, y)
+#                 prevY = posy
                 posy += y + self.thickness
+
+        if not front:
+            return
+
+        posx = 0
+        for x in self.sx:
+            posx += x / 2
+            posy = 0
+            for y in self.sy:
+                posy += y / 2
+                ex = x - self.thickness
+                ey = y - self.thickness
+                print(ex, ey)
+                self.rectangularHole(posx, posy, ex, ey, min(ex,ey)/2)
+                posy += self.thickness + y / 2
+            posx += self.thickness + x / 2
+
+    def xSlotsFront(self):
+        self.xSlots(True)
 
     def ySlots(self):
         posy = -0.5 * self.thickness
@@ -71,6 +94,8 @@ class TypeTray(Boxes):
         self.rectangularHole(x / 2.0, self.gh * 1.5, self.gw, self.gh, r)
 
     def render(self):
+        print(self.argparser.parse_args())
+
         if self.outside:
             self.sx = self.adjustSize(self.sx)
             self.sy = self.adjustSize(self.sy)
@@ -87,22 +112,28 @@ class TypeTray(Boxes):
         self.open()
 
         # outer walls
-        self.rectangularWall(x, h, "Ffef", callback=[self.xHoles, None, self.gripHole],  move="right")
-        self.rectangularWall(y, h, "FFeF", callback=[self.yHoles, ], move="up")
-        self.rectangularWall(y, h, "FFeF", callback=[self.yHoles, ])
-        self.rectangularWall(x, h, "Ffef", callback=[self.xHoles, ], move="left up")
+        self.rectangularWall(x, h, "FfFf", callback=[self.xHoles, None, self.gripHole],  move="right")
+        self.rectangularWall(y, h, "FFFF", callback=[self.yHoles, ], move="up")
+        self.rectangularWall(y, h, "FFFF", callback=[self.yHoles, ])
+        self.rectangularWall(x, h, "FfFf", callback=[self.xHoles, ], move="left up")
 
         # floor
         self.rectangularWall(x, y, "ffff", callback=[self.xSlots, self.ySlots],move="right")
+
+        # tmp # self.sy[0] / 2
+        self.rectangularWall(x, y, "ffff", callback=[self.xSlotsFront, self.ySlots],move="right up")
+
+
         # Inner walls
         for i in range(len(self.sx) - 1):
-            e = [edges.SlottedEdge(self, self.sy, "f", slots=0.5 * hi), "f", "e", "f"]
-            self.rectangularWall(y, hi, e, move="up")
+            e = [edges.SlottedEdge(self, self.sy, "f"), "f",
+                 edges.SlottedEdge(self, self.sy[::-1], "f", slots=0.5 * hi), "f"]
+            self.rectangularWall(y, hi, e, move="down")
 
         for i in range(len(self.sy) - 1):
             e = [edges.SlottedEdge(self, self.sx, "f"), "f",
-                 edges.SlottedEdge(self, self.sx[::-1], "e", slots=0.5 * hi), "f"]
-            self.rectangularWall(x, hi, e, move="up")
+                 edges.SlottedEdge(self, self.sx[::-1], "f", slots=0.5 * hi), "f"]
+            self.rectangularWall(x, hi, e, move="down")
 
         self.close()
 
